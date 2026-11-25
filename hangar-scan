@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# projects-scan: list project folders as JSON for the Projects panel.
+# hangar-scan: list project folders as JSON for the Hangar panel.
 #
-# Roots come from ~/.config/omarchy/projects.json:
+# Roots come from ~/.config/omarchy/hangar.json:
 #   { "roots": ["~/Projects", "~/Work"] }
 # Without that file: ~/Projects and ~/Work, whichever exist.
 #
@@ -10,7 +10,7 @@
 # it as plain text only.
 set -uo pipefail
 
-config="${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/projects.json"
+config="${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/hangar.json"
 
 roots=()
 if [[ -f $config ]]; then

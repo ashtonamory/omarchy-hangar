@@ -1,6 +1,8 @@
-# Projects for Omarchy
+# Hangar
 
-A keyboard-first project picker for the [Omarchy](https://omarchy.org) shell. Press a key, type a few letters, press Enter, and your coding agent opens in that project.
+Your projects, parked and ready to roll out. Hangar is a keyboard-first project picker for the [Omarchy](https://omarchy.org) shell: press a key, type a few letters, press Enter, and your coding agent opens in that project.
+
+![Hangar](assets/screenshot.png)
 
 - Lists every folder in `~/Projects` and `~/Work`, most recently active first
 - Shows each project's branch, uncommitted changes, recent commits and README
@@ -12,13 +14,13 @@ A keyboard-first project picker for the [Omarchy](https://omarchy.org) shell. Pr
 ## Install
 
 ```bash
-omarchy plugin add https://github.com/ashtonamory/omarchy-projects --enable
+omarchy plugin add https://github.com/ashtonamory/omarchy-hangar --enable
 ```
 
 Then bind a key in `~/.config/hypr/bindings.lua`. SUPER+P is Omarchy's "Pseudo window" by default, so move that first:
 
 ```lua
-o.rebind("SUPER + P", "Projects", "omarchy-shell shell toggle ashton.projects")
+o.rebind("SUPER + P", "Hangar", "omarchy-shell shell toggle ashton.hangar")
 o.bind("SUPER + ALT + P", "Pseudo window", hl.dsp.window.pseudo())
 ```
 
@@ -37,7 +39,7 @@ Pick your agent with `omarchy default agent <name>`. If none is set, Enter opens
 
 ## Project folders
 
-By default the panel lists `~/Projects` and `~/Work`. To choose your own, create `~/.config/omarchy/projects.json`:
+By default the panel lists `~/Projects` and `~/Work`. To choose your own, create `~/.config/omarchy/hangar.json`:
 
 ```json
 { "roots": ["~/Projects", "~/code", "~/Work"] }
@@ -46,9 +48,10 @@ By default the panel lists `~/Projects` and `~/Work`. To choose your own, create
 ## Scripting
 
 ```bash
-omarchy-shell shell toggle ashton.projects        # show or hide the panel
-omarchy-shell ashton.projects open my-app         # agent in ~/Projects/my-app
-omarchy-shell ashton.projects terminal my-app     # terminal there
+omarchy-shell shell toggle ashton.hangar        # show or hide the panel
+omarchy-shell ashton.hangar open my-app         # agent in ~/Projects/my-app
+omarchy-shell ashton.hangar terminal my-app     # terminal there
+omarchy-shell ashton.hangar search api          # open the panel already filtered
 ```
 
 ## Extra: a session headline for Claude Code
