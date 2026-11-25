@@ -13,20 +13,54 @@ Your projects, parked and ready to roll out. Hangar is a keyboard-first project 
 
 ![The Hangar panel](assets/screenshot.png)
 
+## Requirements
+
+- [Omarchy](https://omarchy.org) 4 or newer (it needs the Omarchy shell's plugin support and the Lua Hyprland config)
+- A coding agent, if you want Enter to open one: set it with `omarchy default agent <name>`. Without one, Enter shows Omarchy's agent chooser, and Ctrl+Enter still opens a terminal.
+
+Everything else Hangar uses (`git`, `jq`, a terminal) ships with Omarchy.
+
 ## Install
 
+**1. Add the plugin.**
+
 ```bash
-omarchy plugin add https://github.com/ashtonamory/omarchy-hangar --enable
+omarchy plugin add https://github.com/ashtonamory/omarchy-hangar --enable --yes
 ```
 
-Then bind a key in `~/.config/hypr/bindings.lua`. SUPER+P is Omarchy's "Pseudo window" by default, so move that first:
+**2. Give it a key.** Open `~/.config/hypr/bindings.lua` and add these two lines at the end. SUPER+P is Omarchy's "Pseudo window" key, so the second line moves that to SUPER+ALT+P:
 
 ```lua
 o.rebind("SUPER + P", "Hangar", "omarchy-shell shell toggle ashton.hangar")
 o.bind("SUPER + ALT + P", "Pseudo window", hl.dsp.window.pseudo())
 ```
 
-Pick your agent with `omarchy default agent <name>`. If none is set, Enter opens Omarchy's agent chooser.
+Hyprland reloads when you save. Run `hyprctl configerrors`: no output means the binding is good. If you'd rather use another key, change `SUPER + P` and leave out the second line.
+
+**3. Try it.** Press SUPER+P. Type part of a project's name and press Enter.
+
+If the panel doesn't open, restart the shell once with `omarchy restart shell` and try again.
+
+### Install it with an agent
+
+Paste this into Claude Code, Codex or another coding agent on your Omarchy machine:
+
+> Install the Hangar plugin for the Omarchy shell from https://github.com/ashtonamory/omarchy-hangar. Read its README first. Then:
+> 1. Run `omarchy plugin add https://github.com/ashtonamory/omarchy-hangar --enable --yes`.
+> 2. Back up `~/.config/hypr/bindings.lua`, then add the two lines from the README's Install section at the end of it, so that SUPER+P runs `omarchy-shell shell toggle ashton.hangar` and "Pseudo window" moves to SUPER+ALT+P. If SUPER+P is already bound to something other than Omarchy's "Pseudo window" in my config, stop and ask me which key to use instead.
+> 3. Run `hyprctl configerrors` and fix anything it reports about those lines.
+> 4. Run `omarchy plugin list` and confirm `ashton.hangar` is enabled.
+> 5. If my project folders are not `~/Projects` or `~/Work`, ask me where they are and write them to `~/.config/omarchy/hangar.json` as `{ "roots": [...] }`.
+> Do not press keys or open windows for me. Tell me to press SUPER+P to try it.
+
+### Update or remove
+
+```bash
+omarchy plugin update ashton.hangar --yes     # get the latest version
+omarchy plugin remove ashton.hangar --yes     # remove it
+```
+
+After removing it, delete the SUPER+P lines from `~/.config/hypr/bindings.lua`. After an update, if the bar looks wrong, run `omarchy restart shell`.
 
 ## Keys
 
@@ -56,13 +90,16 @@ omarchy-shell ashton.hangar terminal my-app     # terminal there
 omarchy-shell ashton.hangar search api          # open the panel already filtered
 ```
 
+`open`, `terminal` and `search` work once the panel has been shown at least once since the shell started.
+
 ## Extra: a session headline for Claude Code
 
 `extras/claude-statusline.sh` is a Claude Code status line that keeps the session's name at the bottom of every session, with the project, branch, model and context use beside it. With several agents open in one project, the name tells them apart.
 
 ```bash
 mkdir -p ~/.claude/statusline
-cp extras/claude-statusline.sh ~/.claude/statusline/headline.sh
+curl -fsSL https://raw.githubusercontent.com/ashtonamory/omarchy-hangar/main/extras/claude-statusline.sh \
+  -o ~/.claude/statusline/headline.sh
 ```
 
 Then add this to `~/.claude/settings.json`:
