@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# projects-scan: list project folders as JSON for the Projects panel.
+#
+# Roots come from ~/.config/omarchy/projects.json:
+#   { "roots": ["~/Projects", "~/Work"] }
+# Without that file: ~/Projects and ~/Work, whichever exist.
+#
+# Output: a JSON array, most recently active first. Every value is data read
+# from disk (folder names, commit subjects, README lines), and the panel shows
+# it as plain text only.
+set -uo pipefail
+
+config="${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/projects.json"
+
+roots=()
+if [[ -f $config ]]; then
+  while IFS= read -r r; do
+    [[ -n $r ]] && roots+=("${r/#\~/$HOME}")
+  done < <(jq -r '.roots[]? // empty' "$config" 2>/dev/null)
+fi
+if ((${#roots[@]} == 0)); then
+  roots=("$HOME/Projects" "$HOME/Work")
+fi
+
+max_commits=8
+max_readme=6
+
+project_json() {
+  local dir=$1 root=$2
+  local name branch="" changed=0 last_ts="" commits="[]" readme="[]" is_git=false
+  name=$(basename -- "$dir")
+
+  if git -C "$dir" rev-parse --is-inside-work-tree >/dev/null 2>&1 &&
+     [[ $(git -C "$dir" rev-parse --show-toplevel 2>/dev/null) == "$dir" ]]; then
+    is_git=true
+    branch=$(git --no-optional-locks -C "$dir" branch --show-current 2>/dev/null)
+    [[ -z $branch ]] && branch=$(git -C "$dir" rev-parse --short HEAD 2>/dev/null)
+    changed=$(git --no-optional-locks -C "$dir" status --porcelain 2>/dev/null | wc -l)
+    last_ts=$(git -C "$dir" log -1 --format=%ct 2>/dev/null)
+    # unit separator between fields, so any subject text survives intact
+    commits=$(git -C "$dir" log -"$max_commits" --format='%ct%x1f%cr%x1f%s' 2>/dev/null |
+      jq -R -s -c 'split("\n") | map(select(length > 0) | split("\u001f")
+        | {ts: (.[0] | tonumber), when: .[1], subject: (.[2] // "" | .[0:200])})')
+    [[ -z $commits ]] && commits="[]"
+  fi
+
+  local mtime
+  mtime=$(stat -c %Y -- "$dir" 2>/dev/null || echo 0)
+  local active=$mtime
+  [[ -n $last_ts && $last_ts -gt $active ]] && active=$last_ts
+
+  local f
+  for f in "$dir"/README.md "$dir"/README "$dir"/readme.md "$dir"/README.txt; do
+    if [[ -f $f ]]; then
+      readme=$(head -c 20000 -- "$f" |
+        grep -v '^[[:space:]]*$' | grep -v '^[[:space:]]*[<!\[|]' | grep -v '^[[:space:]]*```' |
+        head -"$max_readme" | cut -c1-240 |
+        sed -E 's/^#+ *//; s/\*\*//g; s/`//g; s/\[([^]]*)\]\([^)]*\)/\1/g' |
+        jq -R -s -c 'split("\n") | map(select(length > 0))')
+      break
+    fi
+  done
+
+  jq -n -c \
+    --arg name "$name" --arg path "$dir" --arg root "$root" --arg branch "$branch" \
+    --argjson changed "$changed" --argjson active "$active" --argjson git "$is_git" \
+    --argjson commits "$commits" --argjson readme "$readme" \
+    '{name: $name, path: $path, root: $root, git: $git, branch: $branch,
+      changed: $changed, active: $active, commits: $commits, readme: $readme}'
+}
+
+{
+  for root in "${roots[@]}"; do
+    [[ -d $root ]] || continue
+    label=${root/#$HOME/\~}
+    while IFS= read -r -d '' dir; do
+      project_json "$dir" "$label" &
+    done < <(find "$root" -mindepth 1 -maxdepth 1 -type d ! -name '.*' -print0)
+    wait
+  done
+} | jq -s -c 'sort_by(-.active)'

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "ashton.projects",
+  "name": "Projects",
+  "version": "0.1.0",
+  "author": "ashtonamory",
+  "description": "Pick a project folder and open your coding agent in it",
+  "kinds": [
+    "overlay"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "overlay": "Projects.qml"
+  }
+}

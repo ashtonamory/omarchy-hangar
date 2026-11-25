@@ -1,0 +1,17 @@
+{
+  "search": "Find a project",
+  "count": "%1 of %2",
+  "loading": "Looking for projects…",
+  "noProjects": "No projects found. Add folders under ~/Projects, or list your own roots in ~/.config/omarchy/projects.json.",
+  "noMatches": "No project matches “%1”",
+  "recentCommits": "Recent commits",
+  "noCommits": "No commits yet",
+  "readme": "Readme",
+  "clean": "clean",
+  "changed": { "one": "%1 change", "other": "%1 changes" },
+  "notGit": "Not a git repository",
+  "openAgent": "Open %1",
+  "openAgentDefault": "Open agent",
+  "openTerminal": "Terminal",
+  "close": "Close"
+}
