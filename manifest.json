@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "id": "ashton.projects",
-  "name": "Projects",
+  "id": "ashton.hangar",
+  "name": "Hangar",
   "version": "0.1.0",
   "author": "ashtonamory",
-  "description": "Pick a project folder and open your coding agent in it",
+  "description": "Your projects, parked and ready: pick one and your coding agent opens in it",
   "kinds": [
     "overlay"
   ],
   "keepLoaded": true,
   "entryPoints": {
-    "overlay": "Projects.qml"
+    "overlay": "Hangar.qml"
   }
 }

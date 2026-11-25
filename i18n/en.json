@@ -2,7 +2,7 @@
   "search": "Find a project",
   "count": "%1 of %2",
   "loading": "Looking for projects…",
-  "noProjects": "No projects found. Add folders under ~/Projects, or list your own roots in ~/.config/omarchy/projects.json.",
+  "noProjects": "No projects found. Add folders under ~/Projects, or list your own roots in ~/.config/omarchy/hangar.json.",
   "noMatches": "No project matches “%1”",
   "recentCommits": "Recent commits",
   "noCommits": "No commits yet",

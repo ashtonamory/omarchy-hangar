@@ -5,18 +5,18 @@ import QtQuick
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
-import "ProjectFilter.js" as ProjectFilter
+import "HangarFilter.js" as HangarFilter
 
-// Projects: a keyboard-first picker of project folders. Enter opens the
+// Hangar: a keyboard-first picker of project folders. Enter opens the
 // default coding agent (`omarchy agent`) in the folder; Ctrl+Enter opens a
-// plain terminal there. Summon with: omarchy-shell shell toggle ashton.projects
+// plain terminal there. Summon with: omarchy-shell shell toggle ashton.hangar
 Item {
   id: root
 
   property string omarchyPath: Quickshell.env("OMARCHY_PATH")
   property var shell: null
   property var manifest: null
-  readonly property string pluginId: (root.manifest && root.manifest.id) || "ashton.projects"
+  readonly property string pluginId: (root.manifest && root.manifest.id) || "ashton.hangar"
   readonly property string pluginDir: String(Qt.resolvedUrl(".")).replace(/^file:\/\//, "").replace(/\/+$/, "")
 
   property bool opened: false
@@ -94,7 +94,7 @@ Item {
   }
 
   function rebuild(keepPath) {
-    var out = ProjectFilter.filter(root.projects, root.filterText)
+    var out = HangarFilter.filter(root.projects, root.filterText)
     root.filtered = out
     var idx = 0
     if (keepPath && !root.filterText) {
@@ -124,28 +124,56 @@ Item {
     root.dismiss()
     // The shell starts it, so it outlives this panel; omarchy-agent and the
     // terminal launcher each hand the window to its own systemd scope.
-    if (terminalOnly) {
-      Quickshell.execDetached({
-        command: ["uwsm-app", "--", "xdg-terminal-exec", "--dir=" + project.path],
-        workingDirectory: project.path
-      })
-    } else {
-      Quickshell.execDetached({
-        command: [root.omarchyPath + "/bin/omarchy-agent", "--pick"],
-        workingDirectory: project.path
-      })
+    // A login shell gives it the session PATH, as Util.execArgv does; the path
+    // and argv only ever land in positional parameters, so a folder name is
+    // never read as shell code.
+    var argv = terminalOnly
+      ? ["uwsm-app", "--", "xdg-terminal-exec", "--dir=" + project.path]
+      : ["omarchy-agent", "--pick"]
+    Quickshell.execDetached(["bash", "-lc", 'cd -- "$1" || exit 1; shift; exec "$@"', "bash", project.path].concat(argv))
+  }
+
+  function displayAgent(name) {
+    return name ? name.charAt(0).toUpperCase() + name.slice(1) : ""
+  }
+
+  // Scriptable: omarchy-shell ashton.hangar toggle | open <name> | terminal <name> | search <text>
+  ShellIpc {
+    target: "ashton.hangar"
+    function toggle(): void { root.toggle() }
+    function open(name: string): void { root.launchByName(name, false) }
+    function terminal(name: string): void { root.launchByName(name, true) }
+    function search(text: string): void {
+      if (!root.opened) root.open("{}")
+      root.setFilter(String(text || "").slice(0, 64))
     }
   }
+
+  function launchByName(name, terminalOnly) {
+    var wanted = String(name || "")
+    root.pendingLaunch = { name: wanted, terminal: terminalOnly }
+    // Always against a fresh scan, so a just-created folder is found.
+    root.rescan()
+  }
+
+  property var pendingLaunch: null
 
   Process {
     id: scanProcess
     running: false
-    command: [root.pluginDir + "/projects-scan"]
+    command: [root.pluginDir + "/hangar-scan"]
     stdout: StdioCollector { id: scanOut; waitForEnd: true }
     onExited: function(exitCode) {
       root.scanning = false
       if (exitCode === 0) root.loadScan(scanOut.text)
       else root.scannedOnce = true
+      if (root.pendingLaunch) {
+        var want = root.pendingLaunch
+        root.pendingLaunch = null
+        for (var i = 0; i < root.projects.length; i++) {
+          if (root.projects[i].name === want.name) { root.launch(root.projects[i], want.terminal); return }
+        }
+      }
     }
   }
 
@@ -164,7 +192,7 @@ Item {
   OverlayWindow {
     id: panel
     shown: root.opened
-    WlrLayershell.namespace: "omarchy-projects"
+    WlrLayershell.namespace: "omarchy-hangar"
 
     Rectangle { anchors.fill: parent; color: root.scrim }
     MouseArea { anchors.fill: parent; onClicked: root.dismiss() }
@@ -590,7 +618,7 @@ Item {
 
           Repeater {
             model: [
-              { key: "↵", label: root.agentName ? strings.t("openAgent").arg(root.agentName) : strings.t("openAgentDefault") },
+              { key: "↵", label: root.agentName ? strings.t("openAgent").arg(root.displayAgent(root.agentName)) : strings.t("openAgentDefault") },
               { key: "Ctrl ↵", label: strings.t("openTerminal") },
               { key: "Esc", label: strings.t("close") }
             ]
