@@ -124,18 +124,35 @@ Item {
     root.dismiss()
     // The shell starts it, so it outlives this panel; omarchy-agent and the
     // terminal launcher each hand the window to its own systemd scope.
-    if (terminalOnly) {
-      Quickshell.execDetached({
-        command: ["uwsm-app", "--", "xdg-terminal-exec", "--dir=" + project.path],
-        workingDirectory: project.path
-      })
-    } else {
-      Quickshell.execDetached({
-        command: [root.omarchyPath + "/bin/omarchy-agent", "--pick"],
-        workingDirectory: project.path
-      })
-    }
+    // A login shell gives it the session PATH, as Util.execArgv does; the path
+    // and argv only ever land in positional parameters, so a folder name is
+    // never read as shell code.
+    var argv = terminalOnly
+      ? ["uwsm-app", "--", "xdg-terminal-exec", "--dir=" + project.path]
+      : ["omarchy-agent", "--pick"]
+    Quickshell.execDetached(["bash", "-lc", 'cd -- "$1" || exit 1; shift; exec "$@"', "bash", project.path].concat(argv))
   }
+
+  function displayAgent(name) {
+    return name ? name.charAt(0).toUpperCase() + name.slice(1) : ""
+  }
+
+  // Scriptable: omarchy-shell ashton.projects toggle | open <name> | terminal <name>
+  ShellIpc {
+    target: "ashton.projects"
+    function toggle(): void { root.toggle() }
+    function open(name: string): void { root.launchByName(name, false) }
+    function terminal(name: string): void { root.launchByName(name, true) }
+  }
+
+  function launchByName(name, terminalOnly) {
+    var wanted = String(name || "")
+    root.pendingLaunch = { name: wanted, terminal: terminalOnly }
+    // Always against a fresh scan, so a just-created folder is found.
+    root.rescan()
+  }
+
+  property var pendingLaunch: null
 
   Process {
     id: scanProcess
@@ -146,6 +163,13 @@ Item {
       root.scanning = false
       if (exitCode === 0) root.loadScan(scanOut.text)
       else root.scannedOnce = true
+      if (root.pendingLaunch) {
+        var want = root.pendingLaunch
+        root.pendingLaunch = null
+        for (var i = 0; i < root.projects.length; i++) {
+          if (root.projects[i].name === want.name) { root.launch(root.projects[i], want.terminal); return }
+        }
+      }
     }
   }
 
@@ -590,7 +614,7 @@ Item {
 
           Repeater {
             model: [
-              { key: "↵", label: root.agentName ? strings.t("openAgent").arg(root.agentName) : strings.t("openAgentDefault") },
+              { key: "↵", label: root.agentName ? strings.t("openAgent").arg(root.displayAgent(root.agentName)) : strings.t("openAgentDefault") },
               { key: "Ctrl ↵", label: strings.t("openTerminal") },
               { key: "Esc", label: strings.t("close") }
             ]
