@@ -2,7 +2,7 @@
 
 Your projects, parked and ready to roll out. Hangar is a keyboard-first project picker for the [Omarchy](https://omarchy.org) shell: press a key, type a few letters, press Enter, and your coding agent opens in that project.
 
-![Hangar](assets/screenshot.png)
+![Hangar: type to filter, Enter opens your agent](assets/demo.gif)
 
 - Lists every folder in `~/Projects` and `~/Work`, most recently active first
 - Shows each project's branch, uncommitted changes, recent commits and README
@@ -10,6 +10,8 @@ Your projects, parked and ready to roll out. Hangar is a keyboard-first project 
 - **Ctrl+Enter** opens a plain terminal there
 - Every pick is a fresh session, so you can run several agents in one project
 - Follows your Omarchy theme, fonts and language direction, like the built-in menus
+
+![The Hangar panel](assets/screenshot.png)
 
 ## Install
 
@@ -70,6 +72,10 @@ Then add this to `~/.claude/settings.json`:
 ```
 
 Name a session with `claude -n "…"` or `/rename …`. Otherwise Claude titles it for you.
+
+## Screenshots
+
+The README images are made from fake projects: `scripts/demo-projects.sh` builds them in `~/Code`, and `~/.config/omarchy/hangar.json` with `{ "roots": ["~/Code"] }` points Hangar at them.
 
 ## License
 
